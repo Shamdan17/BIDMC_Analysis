@@ -112,7 +112,7 @@ def split_dataset_by_gender(dataset, genders=["Male", "Female"], return_names=Tr
 
     for patient in dataset:
         gender = patient["gender"]
-        if gender == genders[0]:
+        if gender == genders[0][:1]:
             datasets[0].append(patient)
         else:
             datasets[1].append(patient)
