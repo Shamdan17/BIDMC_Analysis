@@ -107,7 +107,7 @@ def split_dataset_by_gender(dataset, genders=["Male", "Female"], return_names=Tr
     # Split the dataset
     # Returns a list of datasets
     datasets = []
-    for i in range(genders):
+    for i in range(len(genders)):
         datasets.append([])
 
     for patient in dataset:
