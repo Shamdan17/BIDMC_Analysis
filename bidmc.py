@@ -64,8 +64,13 @@ def elliptic(ppg, order, ripple, rs, low_cut, high_cut, fs):
     return signal.filtfilt(a, b, ppg)
 
 # define wavelet denoising filter
-def wavelet_denoising(ppg, wavelet, level):
-    pass
+def wavelet_denoising(ppg, wavelet, level, threshold=0.5):
+    # Choose a wavelet
+    coeffs = pywt.wavedec(ppg, wavelet, level)
+    coeffs_thresholded = [pywt.threshold(c, threshold, mode='soft') for c in coeffs]
+    filtered_signal = pywt.waverec(coeffs_thresholded, wavelet)
+
+    return filtered_signal
 
 
 # define a general filter function that takes parameters
@@ -121,7 +126,10 @@ def filter(signal, filter_type, parameters):
                         parameters['sampling_rate'])
     
     elif filter_type == 'wavelet_denoising':
-        return wavelet_denoising(signal, parameters['wavelet'], parameters['level'])
+        return wavelet_denoising(signal, 
+                                 parameters['wavelet'], 
+                                 parameters['level'],
+                                 parameters['threshold'])
     else:
         raise Exception('Unknown filter type: {}'.format(filter_type))
 
@@ -175,7 +183,8 @@ elliptic_parameters = {
 
 wavelet_denoising_parameters = {
     'wavelet': 'db4',
-    'level': 4
+    'level': 2,
+    'threshold': 0.5
 }
 
 
@@ -187,7 +196,7 @@ filters = {
     'chebyshev': chebyshev_parameters,
     'chebyshev2': chebyshev2_parameters,
     'elliptic': elliptic_parameters,
-    #'wavelet_denoising': wavelet_denoising_parameters
+    'wavelet_denoising': wavelet_denoising_parameters
 }
 
 def apply_filters(signal, filters, measurement_technique='heartrate'):
