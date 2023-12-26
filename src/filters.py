@@ -76,6 +76,14 @@ def elliptic(ppg, order, ripple, rs, low_cut, high_cut, fs):
     return signal.filtfilt(a, b, ppg)
 
 
+# define bessel filter
+def bessel(ppg, order, low_cut, high_cut, sampling_rate):
+    a, b = signal.bessel(
+        order, [low_cut, high_cut], fs=sampling_rate, btype="bandpass"
+    )
+    return signal.filtfilt(a, b, ppg)
+
+
 # define wavelet denoising filter
 def wavelet_denoising(ppg, wavelet, level, threshold=0.5):
     # Choose a wavelet
@@ -104,6 +112,14 @@ def filter(signal, filter_type, parameters):
 
     elif filter_type == "butterworth":
         return butterworth(
+            signal,
+            parameters["order"],
+            parameters["low_cut"],
+            parameters["high_cut"],
+            parameters["sampling_rate"],
+        )
+    elif filter_type == "bessel":
+        return bessel(
             signal,
             parameters["order"],
             parameters["low_cut"],
@@ -170,6 +186,12 @@ butterworth_parameters = {
     "high_cut": -1,
 }
 
+bessel_parameters = {
+    "order": 2,
+    "low_cut": -1,
+    "high_cut": -1,
+}
+
 median_parameters = {"window_size": 25}
 
 fir_parameters = {
@@ -207,6 +229,7 @@ filters = {
     "standardize": {},
     "moving_average": moving_average_parameters,
     "butterworth": butterworth_parameters,
+    "bessel": bessel_parameters,
     "median": median_parameters,
     "fir": fir_parameters,
     "chebyshev": chebyshev_parameters,
