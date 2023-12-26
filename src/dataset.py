@@ -141,7 +141,7 @@ def split_datasets_to_windows(
 
 
 def split_patient_to_windows(
-    patient, metric_agg="mean", window_size=30, window_stride=30
+    patient, metric_agg="mean", window_size=30, window_stride=30, ignore_nans=True
 ):
     # Split the patient into windows
     # Returns a list of windows
@@ -155,8 +155,14 @@ def split_patient_to_windows(
     window_len_signal = window_size * patient["signal_hz"]
     window_len_metrics = window_size * patient["metrics_hz"]
 
+    num_samples = (
+        int((len(ppg) / patient["signal_hz"] - window_size) // window_stride) + 1
+    )
+
+    num_samples = int(num_samples)
+
     # Split the signals into windows
-    for i in range(0, len(ppg) - window_size, window_stride):
+    for i in range(0, num_samples):
         signal_start = i * window_stride * patient["signal_hz"]
         signal_end = signal_start + window_len_signal
         metrics_start = i * window_stride * patient["metrics_hz"]
@@ -179,6 +185,10 @@ def split_patient_to_windows(
         if metric_agg == "mean":
             window["hr"] = np.mean(window["hr"])
             window["rr"] = np.mean(window["rr"])
+
+        if ignore_nans:
+            if np.isnan(window["hr"]) or np.isnan(window["rr"]):
+                continue
 
         window_dataset.append(window)
 
