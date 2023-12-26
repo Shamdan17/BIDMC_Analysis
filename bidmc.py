@@ -1,51 +1,9 @@
 
-# read bidmc data from bidmc.mat
-
-import scipy.io as sio
-from scipy import signal
-
-import numpy as np
-
-def read_bidmc(file_name, id=0):
-    # read data
-    data = sio.loadmat(file_name)
-    data = data['data']
-
-    ppg_patients = data['ppg'][0]
-
-
-    id = 0
-    ppg_signal = ppg_patients[id][0][0][0]
-
-    return ppg_signal
-
-
-file_name = 'bidmc-ppg-and-respiration-dataset-1.0.0/bidmc_data.mat'
-ppg_signal =  read_bidmc(file_name)
-
-
 
 def normalize_pipeline(signal):
     # normalize
     signal = (signal - np.min(signal)) / (np.max(signal) -np.min(signal))
     return signal
-
-
-sampling_rate = 125 
-
-# 60bpm = 1Hz, 180bpm = 3Hz
-# 12-18 breaths per minute = 0.2-0.3Hz
-
-param = 'heartrate' 
-
-frequencies_by_params = {
-    "heartrate": (1, 3),
-    "respirationrate": (0.1, 0.33),
-}
-
-minimum_frequency = frequencies_by_params[param][0]
-maximum_frequency = frequencies_by_params[param][1]
-
 
 
 # define moving average filter
@@ -218,12 +176,6 @@ wavelet_denoising_parameters = {
 }
 
 
-ppg_signal = ppg_signal[:3751
-                        ,0]     
-
-
-ppg_signal = normalize_pipeline(ppg_signal)
-
 filters = {
     'moving_average': moving_average_parameters,
     'butterworth': butterworth_parameters,
@@ -247,58 +199,24 @@ def apply_filters(signal, filters, measurement_technique='heartrate'):
 
     return filtered_signals
 
+sampling_rate = 125 
+
+# 60bpm = 1Hz, 180bpm = 3Hz
+# 12-18 breaths per minute = 0.2-0.3Hz
+
+param = 'heartrate' 
+
+frequencies_by_params = {
+    "heartrate": (1, 3),
+    "respirationrate": (0.1, 0.33),
+}
+
+minimum_frequency = frequencies_by_params[param][0]
+maximum_frequency = frequencies_by_params[param][1]
+
+ppg_signal = ppg_signal[:3751
+                        ,0]     
+
+ppg_signal = normalize_pipeline(ppg_signal)
 apply_filters(ppg_signal, filters, 'heartrate')
 
-print('signal shape: {}'.format(ppg_signal.shape))
-signal_mov_avg = filter(ppg_signal, 'moving_average', moving_average_parameters)
-print('signal_mov_avg shape: {}'.format(signal_mov_avg.shape))
-signal_butterworth = filter(ppg_signal
-                            , 'butterworth', butterworth_parameters)
-print('signal_butterworth shape: {}'.format(signal_butterworth.shape))
-signal_median = filter(ppg_signal, 'median', median_parameters)
-print('signal_median shape: {}'.format(signal_median.shape))
-signal_fir = filter(ppg_signal, 'fir', fir_parameters)
-print('signal_fir shape: {}'.format(signal_fir.shape))
-
-signal_chebyshev = filter(ppg_signal, 'chebyshev', chebyshev_parameters)
-print('signal_chebyshev shape: {}'.format(signal_chebyshev.shape))
-
-signal_chebyshev2 = filter(ppg_signal, 'chebyshev2', chebyshev2_parameters)
-print('signal_chebyshev2 shape: {}'.format(signal_chebyshev2.shape))
-
-signal_elliptic = filter(ppg_signal, 'elliptic', elliptic_parameters)
-print('signal_elliptic shape: {}'.format(signal_elliptic.shape))
-
-
-
-import matplotlib.pyplot as plt
-
-
-fig, axs = plt.subplots(4, 2, figsize=(12, 5
-                                       ))
-axs[0, 0].plot(ppg_signal)
-axs[0, 0].set_title('Original PPG Signal')
-axs[0, 1].plot(signal_mov_avg)
-axs[0, 1].set_title('Moving Average Filtered')
-
-axs[1, 0].plot(signal_butterworth)
-axs[1, 0].set_title('Butterworth Filtered')
-axs[1, 1].plot(signal_median)
-axs[1, 1].set_title('Median Filtered')
-
-axs[2, 0].plot(signal_fir)
-axs[2, 0].set_title('FIR Filtered')
-
-axs[2, 1].plot(signal_chebyshev)
-axs[2, 1].set_title('Chebyshev Filtered')
-
-axs[3, 0].plot(signal_chebyshev2)
-axs[3, 0].set_title('Chebyshev2 Filtered')
-
-axs[3, 1].plot(signal_elliptic)
-axs[3, 1].set_title('Elliptic Filtered')
-
-
-
-plt.tight_layout()
-plt.show()
