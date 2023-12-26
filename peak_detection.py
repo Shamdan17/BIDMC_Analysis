@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[172]:
+# In[1]:
 
 
 import scipy.io
 import numpy as np
 from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 import wfdb
 
 root_path = "bidmc-ppg-and-respiration-dataset-1.0.0"
@@ -25,7 +26,7 @@ rr = rate_record.p_signal[:, 2]
 sampling_rate = 125
 
 
-# In[175]:
+# In[2]:
 
 
 with open(f"{root_path}/bidmc_csv/{patient_csv_id}_Fix.txt", "r") as f:
@@ -34,7 +35,7 @@ with open(f"{root_path}/bidmc_csv/{patient_csv_id}_Fix.txt", "r") as f:
     gender = lines[6].split()[-1]
 
 
-# In[177]:
+# In[3]:
 
 
 def normalize_signal(signal):
@@ -43,7 +44,7 @@ def normalize_signal(signal):
     return (signal - minimum) / (maximum - minimum)
 
 
-# In[178]:
+# In[4]:
 
 
 def standardize_signal(signal):
@@ -52,13 +53,13 @@ def standardize_signal(signal):
     return (signal - mean) / std
 
 
-# In[179]:
+# In[5]:
 
 
 ppg = standardize_signal(ppg[:int(len(ppg)*0.005)])
 
 
-# In[180]:
+# In[6]:
 
 
 # Find peaks in the normalized PPG signal
@@ -72,27 +73,27 @@ plt.legend()
 plt.show()
 
 
-# In[181]:
+# In[7]:
 
 
 def zero_crossing_rate(signal):
     zero_crossings = np.where(np.diff(np.sign(signal)))[0]
-    return zero_crossings
+    return len(zero_crossings)
 
 
-# In[182]:
+# In[8]:
 
 
 def mean_crossing_rate(signal):
     mean_value = np.mean(signal)
     crossings = np.where(np.diff((signal > mean_value).astype(int)))[0]
-    return crossings
+    return len(crossings)
 
 
-# In[183]:
+# In[9]:
 
 
-def calculate_spectral_peaks(signal, sampling_rate):
+def spectral_peak(signal, sampling_rate):
     # Perform FFT on the signal
     fft_result = np.fft.fft(signal)
     
@@ -102,29 +103,37 @@ def calculate_spectral_peaks(signal, sampling_rate):
     # Take the magnitude of the FFT result
     magnitude = np.abs(fft_result)
     
-    # Find peaks in the magnitude spectrum
-    peaks, _ = find_peaks(magnitude, height=5)  # Adjust height parameter as needed
-
-    # Filter out low-frequency peaks (below 0.5 Hz, for example)
-    peaks = [peak for peak in peaks if frequencies[peak] > 1]
-    
-    return peaks, frequencies[peaks]
+    freq_w_mag = frequencies[magnitude.argmax()]
+    rate_w_mag = freq_w_mag * 60
+    return rate_w_mag
 
 
-# In[184]:
+# In[10]:
 
 
 zcr = zero_crossing_rate(ppg)
 
 
-# In[185]:
+# In[11]:
 
 
 mcr = mean_crossing_rate(ppg)
 
 
-# In[191]:
+# In[12]:
 
 
-peaks, freqs = calculate_spectral_peaks(ppg, sampling_rate)
+spectral_peak = spectral_peak(ppg, sampling_rate)
+
+
+# In[13]:
+
+
+zcr, mcr, spectral_peak
+
+
+# In[ ]:
+
+
+
 
