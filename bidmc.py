@@ -104,9 +104,12 @@ def elliptic(ppg, order, ripple, rs, low_cut, high_cut, fs):
 # define wavelet denoising filter
 def wavelet_denoising(ppg, wavelet, level, threshold=0.5):
     # Choose a wavelet
-    coeffs = pywt.wavedec(ppg, wavelet, level)
+    coeffs = pywt.wavedec(ppg, wavelet, level=level)
     coeffs_thresholded = [pywt.threshold(c, threshold, mode='soft') for c in coeffs]
-    filtered_signal = pywt.waverec(coeffs_thresholded[:3], wavelet)
+
+    coeffs_thresholded[-(level//2+1):] = [np.zeros_like(v) for v in coeffs_thresholded[-(level//2+1):]]
+
+    filtered_signal = pywt.waverec(coeffs_thresholded, wavelet)
 
     return filtered_signal
 
