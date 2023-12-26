@@ -27,11 +27,12 @@ def median(ppg, window_size):
 
 # define finite impulse response filter
 def fir(ppg, order, low_cut, high_cut, sampling_rate):
-    taps = signal.firwin(numtaps=101
-                         , 
+    taps = signal.firwin(numtaps=101, 
                          cutoff=[low_cut, high_cut], 
                          fs=sampling_rate, 
-                         pass_zero=False)
+                         width=0.5,
+                         pass_zero='bandpass'
+                         )
     return signal.filtfilt(taps, 1.0, ppg)
 
 # define chebyshev filter
@@ -44,9 +45,9 @@ def chebyshev(ppg, order, ripple, low_cut, high_cut, sampling_rate):
     return signal.filtfilt(a, b, ppg)
 
 # define chebyshev type 2 filter
-def chebyshev2(ppg, order, ripple, low_cut, high_cut, sampling_rate):
+def chebyshev2(ppg, order, rs, low_cut, high_cut, sampling_rate):
     a, b = signal.cheby2(order, 
-                         ripple,
+                         rs,
                          [low_cut, high_cut], 
                          fs=sampling_rate,
                          btype='bandpass')
@@ -67,8 +68,9 @@ def elliptic(ppg, order, ripple, rs, low_cut, high_cut, fs):
 def wavelet_denoising(ppg, wavelet, level, threshold=0.5):
     # Choose a wavelet
     coeffs = pywt.wavedec(ppg, wavelet, level)
+    print('coeffs shape: {}'.format(len(coeffs)))
     coeffs_thresholded = [pywt.threshold(c, threshold, mode='soft') for c in coeffs]
-    filtered_signal = pywt.waverec(coeffs_thresholded, wavelet)
+    filtered_signal = pywt.waverec(coeffs_thresholded[:3], wavelet)
 
     return filtered_signal
 
@@ -111,7 +113,7 @@ def filter(signal, filter_type, parameters):
     elif filter_type == 'chebyshev2':
         return chebyshev2(signal, 
                           parameters['order'], 
-                          parameters['ripple'], 
+                          parameters['rs'], 
                           parameters['low_cut'],
                           parameters['high_cut'],
                           parameters['sampling_rate'])
@@ -139,7 +141,7 @@ moving_average_parameters = {
 }
 
 butterworth_parameters = {
-    'order': 3,
+    'order': 2,
     'low_cut': minimum_frequency,
     'high_cut': maximum_frequency,
     'sampling_rate': 125
@@ -157,7 +159,7 @@ fir_parameters = {
 }
 
 chebyshev_parameters = {
-    'order': 5,
+    'order': 3,
     'ripple': 0.5,
     'low_cut': minimum_frequency,
     'high_cut': maximum_frequency,
@@ -165,15 +167,15 @@ chebyshev_parameters = {
 }
 
 chebyshev2_parameters = {
-    'order': 5,
-    'ripple': 0.5,
+    'order': 3,
+    'rs': 40,
     'low_cut': minimum_frequency,
     'high_cut': maximum_frequency,
     'sampling_rate': 125
 }
 
 elliptic_parameters = {
-    'order': 5,
+    'order': 3,
     'ripple': 0.5,
     'rs': 40,
     'low_cut': minimum_frequency,
@@ -182,9 +184,9 @@ elliptic_parameters = {
 }
 
 wavelet_denoising_parameters = {
-    'wavelet': 'db4',
-    'level': 2,
-    'threshold': 0.5
+    'wavelet': 'db4',   # general-purpose denoising
+    'level': 4,         # Higher levels provide more detailed information but can also introduce more noise.
+    'threshold': 0.4    # The threshold value determines which coefficients in the wavelet transform are considered as noise and set to zero during thresholding. 
 }
 
 
